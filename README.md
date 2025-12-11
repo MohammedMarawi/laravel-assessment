@@ -1,59 +1,193 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Digital Subscriptions Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel API for managing digital product subscriptions with Stripe payment integration.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+-   **Authentication**: Register, Login, Logout (Laravel Sanctum)
+-   **Products**: CRUD with file uploads (Spatie MediaLibrary)
+-   **Subscriptions**: Create, view, cancel subscriptions
+-   **Payments**: Stripe Checkout integration with webhooks
+-   **Reports**: Excel export of subscriptions (Maatwebsite Excel)
+-   **Authorization**: Role-based access (Spatie Permission)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Requirements
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+-   PHP 8.2+
+-   Composer
+-   MySQL/SQLite
+-   Stripe account (test mode)
 
-## Learning Laravel
+## Installation
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+# Clone repository
+git clone <repository-url>
+cd laravel-assessment
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+# Install dependencies
+composer install
 
-## Laravel Sponsors
+# Copy environment file
+cp .env.example .env
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Generate application key
+php artisan key:generate
 
-### Premium Partners
+# Configure database in .env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=subscriptions_db
+DB_USERNAME=root
+DB_PASSWORD=
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# Configure Stripe in .env
+STRIPE_KEY=pk_test_xxx
+STRIPE_SECRET=sk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
 
-## Contributing
+# Run migrations and seeders
+php artisan migrate:fresh --seed
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Start the server
+php artisan serve
+```
 
-## Code of Conduct
+## API Endpoints
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Authentication
 
-## Security Vulnerabilities
+```bash
+# Register
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","email":"john@example.com","password":"password123"}'
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Login
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"password123"}'
+
+# Logout (requires token)
+curl -X POST http://localhost:8000/api/auth/logout \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Products
+
+```bash
+# List products
+curl http://localhost:8000/api/products \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Create product
+curl -X POST http://localhost:8000/api/products \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "title=Premium Course" \
+  -F "description=Full access" \
+  -F "price=99.99" \
+  -F "status=active" \
+  -F "duration_days=30" \
+  -F "file=@/path/to/image.jpg"
+
+# Filter products
+curl "http://localhost:8000/api/products?status=active&min_price=50" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Subscriptions
+
+```bash
+# List my subscriptions
+curl http://localhost:8000/api/subscriptions \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Create subscription
+curl -X POST http://localhost:8000/api/subscriptions \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": 1}'
+
+# View subscription
+curl http://localhost:8000/api/subscriptions/1 \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Cancel subscription
+curl -X POST http://localhost:8000/api/subscriptions/1/cancel \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Get statistics
+curl http://localhost:8000/api/subscriptions/statistics \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Export to Excel
+curl -o subscriptions.xlsx http://localhost:8000/api/subscriptions/export \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Payments
+
+```bash
+# Create checkout session
+curl -X POST http://localhost:8000/api/payments/checkout \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"subscription_id": 1}'
+
+# List my payments
+curl http://localhost:8000/api/payments \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Stripe Webhook Testing
+
+```bash
+# Install Stripe CLI
+# https://stripe.com/docs/stripe-cli
+
+# Forward webhooks to local
+stripe listen --forward-to localhost:8000/api/webhook/stripe
+
+# Trigger test events
+stripe trigger checkout.session.completed
+stripe trigger customer.subscription.updated
+```
+
+## Running Tests
+
+```bash
+# Run all tests
+php artisan test
+
+# Run specific test
+php artisan test --filter=AuthTest
+
+# Run with coverage
+php artisan test --coverage
+```
+
+## Environment Variables
+
+| Variable                | Description                   |
+| ----------------------- | ----------------------------- |
+| `STRIPE_KEY`            | Stripe publishable key        |
+| `STRIPE_SECRET`         | Stripe secret key             |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+
+## Response Format
+
+All API responses follow this format:
+
+```json
+{
+  "status": "success|error",
+  "message": "Description",
+  "data": { ... },
+  "meta": { "total": 100, "page": 1 }
+}
+```
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT

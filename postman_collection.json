@@ -1,0 +1,678 @@
+{
+	"info": {
+		"_postman_id": "laravel-subscriptions-api",
+		"name": "Digital Subscriptions Management API",
+		"description": "Complete API collection for the Laravel Digital Subscriptions Management System.\n\n## Setup\n1. Set `base_url` variable to your server URL (e.g., http://localhost:8000)\n2. Register/Login to get a token\n3. The token will be automatically set after login\n\n## Features\n- User Authentication (Sanctum)\n- Products CRUD\n- Subscriptions Management\n- Stripe Payments\n- Excel Export",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"description": "User authentication endpoints",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Register a new user account. Returns user data and authentication token."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.token) {",
+									"        pm.collectionVariables.set('token', jsonData.data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Authenticate user and receive access token."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.token) {",
+									"        pm.collectionVariables.set('token', jsonData.data.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/auth/logout",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "logout"]
+						},
+						"description": "Revoke the current access token and log out."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user"]
+						},
+						"description": "Get the currently authenticated user's details."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Products",
+			"description": "Product management endpoints (CRUD)",
+			"item": [
+				{
+					"name": "List Products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products?status=active&min_price=0&max_price=1000&search=&sort_by=created_at&sort_order=desc",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products"],
+							"query": [
+								{
+									"key": "status",
+									"value": "active",
+									"description": "Filter by status (active/inactive)"
+								},
+								{
+									"key": "min_price",
+									"value": "0",
+									"description": "Minimum price filter"
+								},
+								{
+									"key": "max_price",
+									"value": "1000",
+									"description": "Maximum price filter"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by title"
+								},
+								{
+									"key": "sort_by",
+									"value": "created_at",
+									"description": "Sort field (title, price, created_at)"
+								},
+								{
+									"key": "sort_order",
+									"value": "desc",
+									"description": "Sort order (asc/desc)"
+								}
+							]
+						},
+						"description": "List all products with optional filtering, sorting, and pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Premium Monthly Plan",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Full access to all features for 30 days",
+									"type": "text"
+								},
+								{
+									"key": "price",
+									"value": "29.99",
+									"type": "text"
+								},
+								{
+									"key": "status",
+									"value": "active",
+									"type": "text"
+								},
+								{
+									"key": "duration_days",
+									"value": "30",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "",
+									"description": "Optional product image (jpeg, jpg, png, pdf)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products"]
+						},
+						"description": "Create a new product with optional file upload."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "1"]
+						},
+						"description": "Get details of a specific product by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated Product Title\",\n    \"description\": \"Updated description\",\n    \"price\": 39.99,\n    \"status\": \"active\",\n    \"duration_days\": 60\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/products/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "1"]
+						},
+						"description": "Update an existing product. All fields are optional (partial update)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Product",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/products/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "products", "1"]
+						},
+						"description": "Soft delete a product by ID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Subscriptions",
+			"description": "Subscription management endpoints",
+			"item": [
+				{
+					"name": "List My Subscriptions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/subscriptions?status=active",
+							"host": ["{{base_url}}"],
+							"path": ["api", "subscriptions"],
+							"query": [
+								{
+									"key": "status",
+									"value": "active",
+									"description": "Filter by status (pending, active, expired, cancelled)"
+								}
+							]
+						},
+						"description": "List all subscriptions for the authenticated user."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"product_id\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/subscriptions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "subscriptions"]
+						},
+						"description": "Create a new subscription for a product. Status will be 'pending' until payment."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Subscription",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/subscriptions/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "subscriptions", "1"]
+						},
+						"description": "Get details of a specific subscription. Users can only view their own subscriptions."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/subscriptions/1/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["api", "subscriptions", "1", "cancel"]
+						},
+						"description": "Cancel an active subscription. Users can only cancel their own subscriptions."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Statistics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/subscriptions/statistics",
+							"host": ["{{base_url}}"],
+							"path": ["api", "subscriptions", "statistics"]
+						},
+						"description": "Get subscription statistics for the authenticated user (total, active, expired, spending)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"description": "Payment and checkout endpoints",
+			"item": [
+				{
+					"name": "List My Payments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments"]
+						},
+						"description": "List all payments for the authenticated user."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Checkout Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"subscription_id\": 1,\n    \"currency\": \"usd\",\n    \"success_url\": \"http://localhost:8000/api/payment/success?session_id={CHECKOUT_SESSION_ID}\",\n    \"cancel_url\": \"http://localhost:8000/api/payment/cancel\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/checkout",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "checkout"]
+						},
+						"description": "Create a Stripe Checkout Session for a pending subscription. Returns session_url to redirect user."
+					},
+					"response": []
+				},
+				{
+					"name": "Payment Success Callback",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payment/success?session_id=cs_test_xxx",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payment", "success"],
+							"query": [
+								{
+									"key": "session_id",
+									"value": "cs_test_xxx",
+									"description": "Stripe checkout session ID"
+								}
+							]
+						},
+						"description": "Handle successful payment redirect from Stripe."
+					},
+					"response": []
+				},
+				{
+					"name": "Payment Cancel Callback",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payment/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payment", "cancel"]
+						},
+						"description": "Handle cancelled payment redirect from Stripe."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reports",
+			"description": "Export and reporting endpoints",
+			"item": [
+				{
+					"name": "Export Subscriptions (Excel)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/subscriptions/export?status=&from_date=&to_date=",
+							"host": ["{{base_url}}"],
+							"path": ["api", "subscriptions", "export"],
+							"query": [
+								{
+									"key": "status",
+									"value": "",
+									"description": "Filter by status (active, expired, cancelled)"
+								},
+								{
+									"key": "from_date",
+									"value": "",
+									"description": "Start date filter (YYYY-MM-DD)"
+								},
+								{
+									"key": "to_date",
+									"value": "",
+									"description": "End date filter (YYYY-MM-DD)"
+								}
+							]
+						},
+						"description": "Export subscriptions to Excel file. Admins export all, users export their own."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Webhooks",
+			"description": "Stripe webhook endpoint (for testing)",
+			"item": [
+				{
+					"name": "Stripe Webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Stripe-Signature",
+								"value": "t=xxx,v1=xxx",
+								"description": "Required Stripe signature header"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"evt_test_xxx\",\n    \"type\": \"checkout.session.completed\",\n    \"data\": {\n        \"object\": {\n            \"id\": \"cs_test_xxx\",\n            \"payment_intent\": \"pi_test_xxx\",\n            \"client_reference_id\": \"1\",\n            \"metadata\": {\n                \"subscription_id\": \"1\",\n                \"payment_id\": \"1\",\n                \"user_id\": \"1\"\n            }\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/webhook/stripe",
+							"host": ["{{base_url}}"],
+							"path": ["api", "webhook", "stripe"]
+						},
+						"description": "Stripe webhook endpoint. Requires valid Stripe-Signature header.\n\nSupported events:\n- checkout.session.completed\n- invoice.payment_succeeded\n- customer.subscription.updated\n- customer.subscription.deleted\n- payment_intent.payment_failed"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
